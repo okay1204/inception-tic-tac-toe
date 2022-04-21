@@ -9,7 +9,14 @@ HEIGHT = 900
 # Typing shortcuts
 Mark = Literal['X', 'O', None]
 
-class Colors:
+# Initialize pygame
+pygame.init()
+pygame.font.init()
+screen = pygame.display.set_mode((WIDTH, HEIGHT))
+pygame.display.set_caption("Inception Tic Tac Toe")
+
+# Colors
+class Color:
     WHITE = (255, 255, 255)
     DARK_GRAY = (50, 50, 50)
     BLACK = (0, 0, 0)
@@ -17,9 +24,10 @@ class Colors:
     BLUE = (0, 0, 255)
     HIGHLIGHT = (255, 252, 179)
 
-pygame.init()
-screen = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption("Inception Tic Tac Toe")
+# Fonts
+class Font:
+    CURRENT_TURN = pygame.font.SysFont('Arial', 60)
+
 
 class TicTacToeBoard:
     """
@@ -46,7 +54,7 @@ class TicTacToeBoard:
         """
 
         # Draws a large black square to fill in with white squares
-        pygame.draw.rect(screen, Colors.DARK_GRAY, (x, y, self.BOARD_SIZE - self.BOARD_LINE_WIDTH, self.BOARD_SIZE - self.BOARD_LINE_WIDTH))
+        pygame.draw.rect(screen, Color.DARK_GRAY, (x, y, self.BOARD_SIZE - self.BOARD_LINE_WIDTH, self.BOARD_SIZE - self.BOARD_LINE_WIDTH))
 
         # Loop through all 9 squares
         for boxX in range(3):
@@ -93,6 +101,16 @@ class TicTacToeBoard:
         # No winner
         return None
 
+    def is_full(self) -> bool:
+        """
+        Checks if the board is full
+        """
+        for row in self.board:
+            for box in row:
+                if box.mark is None:
+                    return False
+        return True
+
 class TickBox:
     SIZE = (TicTacToeBoard.BOARD_SIZE - (TicTacToeBoard.BOARD_LINE_WIDTH * 2)) // 3
 
@@ -105,7 +123,7 @@ class TickBox:
 
     def draw(self, x: int, y: int) -> None:
         self.rect = pygame.Rect(x, y, self.SIZE, self.SIZE)
-        pygame.draw.rect(screen, Colors.WHITE, self.rect)
+        pygame.draw.rect(screen, Color.WHITE, self.rect)
         self.draw_mark(x, y)
 
     def draw_mark(self, x: int, y: int) -> None:
@@ -114,7 +132,7 @@ class TickBox:
             # Draw the blue line from the top left to the bottom right 
             pygame.draw.line(
                 screen,
-                Colors.BLUE,
+                Color.BLUE,
                 (
                     x + self.XO_MARGIN,
                     y + self.XO_MARGIN
@@ -129,7 +147,7 @@ class TickBox:
             # Draw the blue line from the top right to the bottom left
             pygame.draw.line(
                 screen,
-                Colors.BLUE,
+                Color.BLUE,
                 (
                     x + self.XO_MARGIN,
                     y + (TickBox.SIZE - self.XO_MARGIN)
@@ -151,14 +169,14 @@ class TickBox:
             # Draw outer red circle
             pygame.draw.circle(
                 screen,
-                Colors.RED,
+                Color.RED,
                 circle_center,
                 self.SIZE // 2 - (self.XO_MARGIN / 2)
             )
             # Draw inner white circle
             pygame.draw.circle(
                 screen,
-                Colors.WHITE,
+                Color.WHITE,
                 circle_center,
                 self.SIZE // 2 - (self.XO_MARGIN / 2) - self.XO_WIDTH
             )
@@ -175,7 +193,7 @@ class TickBox:
         if not self.rect:
             return
 
-        pygame.draw.rect(screen, Colors.HIGHLIGHT, self.rect)
+        pygame.draw.rect(screen, Color.HIGHLIGHT, self.rect)
         self.draw_mark(self.rect.x, self.rect.y)
 
 class InceptionBoard:
@@ -208,7 +226,7 @@ class InceptionBoard:
         """
 
         # Draws a large black square to fill in with tic tac toe boards
-        pygame.draw.rect(screen, Colors.DARK_GRAY, (x, y, self.BOARD_SIZE - self.BOARD_LINE_WIDTH, self.BOARD_SIZE - self.BOARD_LINE_WIDTH))
+        pygame.draw.rect(screen, Color.DARK_GRAY, (x, y, self.BOARD_SIZE - self.BOARD_LINE_WIDTH, self.BOARD_SIZE - self.BOARD_LINE_WIDTH))
 
         # Loop through all 9 squares
         for boxX in range(3):
@@ -217,7 +235,7 @@ class InceptionBoard:
                 # Draw a smaller white square in the correct position for the background
                 pygame.draw.rect(
                     screen,
-                    Colors.WHITE,
+                    Color.WHITE,
                     (
                         x + ((self.BOARD_SIZE / 3) * boxX),
                         y + ((self.BOARD_SIZE / 3) * boxY),
@@ -232,9 +250,9 @@ class InceptionBoard:
                     y + ((self.BOARD_SIZE / 3) * boxY) + self.BOARD_BOX_SIZE // 2 - TicTacToeBoard.BOARD_SIZE // 2
                 )
 
-    def highlight_mouseover_tickbox(self) -> None:
+    def get_hovering_tickbox(self) -> Optional[TickBox]:
         """
-        Highlights the tickbox that the mouse is over
+        Gets the TickBox that the mouse is hovering over
         """
         mouse_pos = pygame.mouse.get_pos()
 
@@ -247,29 +265,51 @@ class InceptionBoard:
                         tickbox = miniboard.get_box(tickboxX, tickboxY)
 
                         if tickbox.is_hovered_over(mouse_pos):
-                            tickbox.highlight()
-                            return
+                            return tickbox
 
 running: bool = True
-
 board: InceptionBoard = InceptionBoard()
+turn: Literal['X', 'O'] = 'X'
+clicked_tickbox: Optional[TickBox] = None
 
 while running:
+    hovering_tickbox = board.get_hovering_tickbox()
 
     for event in pygame.event.get(): # Gets all the events which have occured till now and keeps tab of them.
         # Listens for the the X button at the top
         if event.type == pygame.QUIT:
             running = False
+        # Listens for mouse left-click down
+        elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            if hovering_tickbox:
+                clicked_tickbox = hovering_tickbox
+        # Listens for mouse left-click release
+        elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
+            if clicked_tickbox and clicked_tickbox is hovering_tickbox:
+
+                # If the box is empty, fill it with the current player's mark
+                if not clicked_tickbox.mark:
+                    clicked_tickbox.mark = turn
+                    turn = 'X' if turn == 'O' else 'O'
+                
+                clicked_tickbox = None
 
     # Clear the screen
-    screen.fill(Colors.WHITE)
-
-    # Boolean that stores whether left mouse button is pressed or not
-    mouse_pressed: bool = pygame.mouse.get_pressed()[0]
+    screen.fill(Color.WHITE)
+    
+    text_surface: pygame.Surface = Font.CURRENT_TURN.render('Turn:', True, Color.BLACK)
+    screen.blit(text_surface, (WIDTH // 2 - text_surface.get_width(), 20))
 
     # Draw the board in the horizontal center and bottom of the screen
-    board.draw(WIDTH // 2 - board.BOARD_SIZE // 2, HEIGHT - board.BOARD_SIZE)
-    board.highlight_mouseover_tickbox()
+    board.draw((WIDTH // 2) - (board.BOARD_SIZE // 2), HEIGHT - board.BOARD_SIZE)
+    
+    if hovering_tickbox:
+        hovering_tickbox.highlight()
+        pygame.mouse.set_system_cursor(pygame.SYSTEM_CURSOR_HAND)
+    else:
+        # Set cursor to default
+        pygame.mouse.set_system_cursor(pygame.SYSTEM_CURSOR_ARROW)
+
 
     pygame.display.flip()
 
