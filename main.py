@@ -342,15 +342,28 @@ class InceptionBoard:
                     return False
         return True
 
+# True while the game is running
 running: bool = True
+
+# The main board
 board: InceptionBoard = InceptionBoard()
+
+# Which player's turn it is
 turn: Literal['X', 'O'] = 'X'
+
+# The tickbox that the mouse is currently holding left click on
 clicked_tickbox: Optional[TickBox] = None
+
+# The tickbox that the mouse was hovering over last frame
 last_hovering_tickbox: Optional[TickBox] = None
+
+# The tickbox that the mouse is currently hovering over
 hovering_tickbox: Optional[TickBox] = None
+
 # None = No winner yet, X = X wins, O = O wins, T = Tie
 winner: Literal['X', 'O', 'T', None] = False
 
+# Reset button rectangle
 reset_button_rect: pygame.Rect = pygame.Rect(
     (WIDTH // 2) - (RESET_BUTTON_WIDTH // 2),
     100,
