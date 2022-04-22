@@ -332,13 +332,24 @@ class InceptionBoard:
 
         return check_winner(mark_matrix)
 
+    def is_full(self) -> bool:
+        """
+        Checks if every mini board has a winner
+        """
+        for row in self.board:
+            for miniboard in row:
+                if not miniboard.winning_mark:
+                    return False
+        return True
+
 running: bool = True
 board: InceptionBoard = InceptionBoard()
 turn: Literal['X', 'O'] = 'X'
 clicked_tickbox: Optional[TickBox] = None
 last_hovering_tickbox: Optional[TickBox] = None
 hovering_tickbox: Optional[TickBox] = None
-winner: Mark = None
+# None = No winner yet, X = X wins, O = O wins, T = Tie
+winner: Literal['X', 'O', 'T', None] = False
 
 reset_button_rect: pygame.Rect = pygame.Rect(
     (WIDTH // 2) - (RESET_BUTTON_WIDTH // 2),
@@ -395,6 +406,8 @@ while running:
                     
                     # Check if there is a winner
                     winner = board.check_winner()
+                    if not winner and board.is_full():
+                        winner = 'T'
                 
                 # Reset the clicked tickbox
                 clicked_tickbox = None
@@ -417,20 +430,27 @@ while running:
             DrawShape.O(*INFO_SHAPE_ARGS)
     # If there is a winner, draw the winner and a button to reset the board
     else:
-        # Draw the text
-        text_surface: pygame.Surface = Font.WINNER.render('Winner!', True, Color.BLACK)
-        screen.blit(text_surface, ((WIDTH // 2) - text_surface.get_width(), 20))
+        # If it's not a tie, draw the winner
+        if winner != 'T':
+            # Draw the text
+            text_surface: pygame.Surface = Font.WINNER.render('Winner!', True, Color.BLACK)
+            screen.blit(text_surface, ((WIDTH // 2) - text_surface.get_width(), 20))
 
-        # Draw the winner's mark
-        if winner == 'X':
-            DrawShape.X(*INFO_SHAPE_ARGS)
-        # If it's Player O's turn, draw an O
+            # Draw the winner's mark
+            if winner == 'X':
+                DrawShape.X(*INFO_SHAPE_ARGS)
+            # If it's Player O's turn, draw an O
+            else:
+                DrawShape.O(*INFO_SHAPE_ARGS)
+
+        # If it's a tie, draw the Tie text
         else:
-            DrawShape.O(*INFO_SHAPE_ARGS)
+            # Draw the text
+            text_surface: pygame.Surface = Font.WINNER.render('Tie!', True, Color.BLACK)
+            screen.blit(text_surface, ((WIDTH // 2) - (text_surface.get_width() // 2), 20))
 
         # Draw the reset button
         pygame.draw.rect(screen, Color.LIGHT_GRAY, reset_button_rect)
-
         reset_text_surface: pygame.Surface = Font.RESET_BUTTON.render('Reset', True, Color.BLACK)
         screen.blit(reset_text_surface, ((WIDTH // 2) - (reset_text_surface.get_width() // 2), 100))
 
