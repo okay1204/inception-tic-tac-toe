@@ -371,7 +371,7 @@ while running:
             if hovering_tickbox:
                 clicked_tickbox = hovering_tickbox
 
-            if reset_button_rect.collidepoint(pygame.mouse.get_pos()):
+            if winner and reset_button_rect.collidepoint(pygame.mouse.get_pos()):
                 board = InceptionBoard()
                 turn = 'X'
                 winner = None
