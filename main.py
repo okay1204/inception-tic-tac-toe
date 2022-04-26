@@ -377,12 +377,12 @@ while running:
 
     # If the mouse is hovering over an active tickbox, highlight it and set cursor to hand
     if hovering_tickbox and not hovering_tickbox.board.winning_mark and not winner:
-        pygame.mouse.set_system_cursor(pygame.SYSTEM_CURSOR_HAND)
+        pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_HAND)
         hovering_tickbox.highlighted = True
     
     # If the mouse has moved off of a tickbox, unhighlight it and set the cursor to default
     if last_hovering_tickbox and hovering_tickbox is not last_hovering_tickbox:
-        pygame.mouse.set_system_cursor(pygame.SYSTEM_CURSOR_ARROW)
+        pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_ARROW)
         last_hovering_tickbox.highlighted = False
 
     for event in pygame.event.get(): # Gets all the events which have occured until now
