@@ -385,8 +385,9 @@ while running:
         pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_ARROW)
         last_hovering_tickbox.highlighted = False
 
-    for event in pygame.event.get(): # Gets all the events which have occured until now
-        # Listens for the the X button at the top right
+    # Loop through all events that have happened until now
+    for event in pygame.event.get():
+        # Listens for when the close button is pressed
         if event.type == pygame.QUIT:
             running = False
         # Listens for mouse left-click down
