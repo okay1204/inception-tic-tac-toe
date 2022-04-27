@@ -14,7 +14,7 @@ RESET_BUTTON_WIDTH = 100
 RESET_BUTTON_HEIGHT = 50
 
 # Typing shortcuts
-Mark = Literal['X', 'O', None]
+Mark = Literal['X', 'O']
 
 # Initialize pygame
 pygame.init()
@@ -66,24 +66,24 @@ class DrawShape:
             line_thickness
         )
 
-def check_winner(board: List[List[Mark]]) -> Mark:
+def check_winner(board: List[List[Optional[Mark]]], mark: Mark) -> bool:
     """
-    Checks if there is a winner in a Tic Tac Toe game from a 3x3 matrix. Returns the winning mark if there is one.
+    Checks if the given mark has won in a Tic Tac Toe game from a 3x3 matrix. Returns True if the mark has won.
     """
     # Check rows
     for row in board:
-        if row[0] is not None and row[0] == row[1] == row[2]:
+        if mark == row[0] == row[1] == row[2]:
             return row[0]
 
     # Check columns
     for col in range(3):
-        if board[0][col] is not None and board[0][col] == board[1][col] == board[2][col]:
+        if mark == board[0][col] == board[1][col] == board[2][col]:
             return board[0][col]
 
     # Check diagonals
-    if board[0][0] is not None and board[0][0] == board[1][1] == board[2][2]:
+    if mark == board[0][0] == board[1][1] == board[2][2]:
         return board[0][0]
-    if board[0][2] is not None and board[0][2] == board[1][1] == board[2][0]:
+    if mark == board[0][2] == board[1][1] == board[2][0]:
         return board[0][2]
 
     # No winner
@@ -100,13 +100,18 @@ class TicTacToeBoard:
     def __init__(self) -> None:
         # None = empty, X = X, O = O
         self.board: List[List[TickBox]] = []
+        
+        # Repeat 3 times
         for _ in range(3):
+            # Append a new row
             self.board.append([])
+            # Repeat 3 times
             for _ in range(3):
+                # Append a new box at the end of the last row
                 self.board[-1].append(TickBox(self))
 
         # This is set to the winner if there is one
-        self.winning_mark: Mark = None
+        self.winning_mark: Optional[Mark] = None
 
     def draw(self, x: int, y: int) -> None:
         """
@@ -136,7 +141,7 @@ class TicTacToeBoard:
             elif self.winning_mark == 'O':
                 DrawShape.O(x, y, self.BOARD_SIZE, 15, Color.RED)
 
-    def set_mark(self, x: int, y: int, mark: Mark) -> None:
+    def set_mark(self, x: int, y: int, mark: Optional[Mark]) -> None:
         """
         Sets a box to a mark
         """
@@ -156,20 +161,25 @@ class TicTacToeBoard:
             for box in row:
                 box.mark = None
 
-    def check_winner(self) -> Mark:
+    def check_winner(self, mark: Mark) -> bool:
         """
-        Checks if there is a winner. Returns the winner if there is one and set winning_mark to the corresponding mark.
+        Checks if the given mark is the winner. Returns True if there is one and sets winning_mark to the corresponding mark.
         """
         # Transform the board into a 3x3 matrix with only the marks
-        mark_matrix: List[List[Mark]] = []
+        mark_matrix: List[List[Optional[Mark]]] = []
         for row in self.board:
             mark_matrix.append([])
             for box in row:
                 mark_matrix[-1].append(box.mark)
 
-        # Save the winning mark and return it
-        self.winning_mark = check_winner(mark_matrix)
-        return self.winning_mark
+        # Check if the mark has won
+        is_winner = check_winner(mark_matrix, mark)
+
+        # If there is a winner, set the winning mark
+        if is_winner:
+            self.winning_mark = mark
+
+        return is_winner
 
     def is_full(self) -> bool:
         """
@@ -192,7 +202,7 @@ class TickBox:
         self.rect: Optional[pygame.Rect] = None
 
         # Mark of the box
-        self.mark: Mark = None
+        self.mark: Optional[Mark] = None
 
         # The board this box is in
         self.board: TicTacToeBoard = board
@@ -319,18 +329,25 @@ class InceptionBoard:
                         if tickbox.is_hovered_over(mouse_pos):
                             return tickbox
 
-    def check_winner(self) -> Mark:
+    def check_winner(self, mark: Mark) -> bool:
         """
-        Checks if there is a winner. Returns the winner if there is one.
+        Checks if the given mark is the winner. Returns True if there is one.
         """
         # Transform the board into a 3x3 matrix with only the marks
-        mark_matrix: List[List[Mark]] = []
+        mark_matrix: List[List[Optional[Mark]]] = []
         for row in self.board:
             mark_matrix.append([])
             for board in row:
                 mark_matrix[-1].append(board.winning_mark)
 
-        return check_winner(mark_matrix)
+        # Check if the mark has won
+        is_winner = check_winner(mark_matrix, mark)
+
+        # If there is a winner, set the winning mark
+        if is_winner:
+            self.winning_mark = mark
+
+        return is_winner
 
     def is_full(self) -> bool:
         """
@@ -349,7 +366,7 @@ running: bool = True
 board: InceptionBoard = InceptionBoard()
 
 # Which player's turn it is
-turn: Literal['X', 'O'] = 'X'
+turn: Mark = 'X'
 
 # The tickbox that the mouse is currently holding left click on
 clicked_tickbox: Optional[TickBox] = None
@@ -377,17 +394,16 @@ while running:
 
     # If the mouse is hovering over an active tickbox, highlight it and set cursor to hand
     if hovering_tickbox and not hovering_tickbox.board.winning_mark and not winner:
-        pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_HAND)
+        pygame.mouse.set_system_cursor(pygame.SYSTEM_CURSOR_HAND)
         hovering_tickbox.highlighted = True
     
     # If the mouse has moved off of a tickbox, unhighlight it and set the cursor to default
     if last_hovering_tickbox and hovering_tickbox is not last_hovering_tickbox:
-        pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_ARROW)
+        pygame.mouse.set_system_cursor(pygame.SYSTEM_CURSOR_ARROW)
         last_hovering_tickbox.highlighted = False
 
-    # Loop through all events that have happened until now
-    for event in pygame.event.get():
-        # Listens for when the close button is pressed
+    for event in pygame.event.get(): # Gets all the events which have occured until now
+        # Listens for the the X button at the top right
         if event.type == pygame.QUIT:
             running = False
         # Listens for mouse left-click down
@@ -410,18 +426,19 @@ while running:
                 miniboard = clicked_tickbox.board
 
                 # If the box is empty and the board isn't over, fill it with the current player's mark
-                if not clicked_tickbox.mark and not miniboard.check_winner() and not winner:
+                if not clicked_tickbox.mark and not miniboard.check_winner(turn) and not winner:
                     clicked_tickbox.mark = turn
-                    turn = 'X' if turn == 'O' else 'O'
 
                     # If there is a tie, reset the board
-                    if not miniboard.check_winner() and miniboard.is_full():
+                    if not miniboard.check_winner(turn) and miniboard.is_full():
                         miniboard.reset()
                     
                     # Check if there is a winner
-                    winner = board.check_winner()
+                    winner = board.check_winner(turn)
                     if not winner and board.is_full():
                         winner = 'T'
+
+                    turn = 'X' if turn == 'O' else 'O'
                 
                 # Reset the clicked tickbox
                 clicked_tickbox = None
