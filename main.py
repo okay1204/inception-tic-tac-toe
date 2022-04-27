@@ -73,21 +73,21 @@ def check_winner(board: List[List[Optional[Mark]]], mark: Mark) -> bool:
     # Check rows
     for row in board:
         if mark == row[0] == row[1] == row[2]:
-            return row[0]
+            return True
 
     # Check columns
     for col in range(3):
         if mark == board[0][col] == board[1][col] == board[2][col]:
-            return board[0][col]
+            return True
 
     # Check diagonals
     if mark == board[0][0] == board[1][1] == board[2][2]:
-        return board[0][0]
-    if mark == board[0][2] == board[1][1] == board[2][0]:
-        return board[0][2]
+        return True
+    elif mark == board[0][2] == board[1][1] == board[2][0]:
+        return True
 
     # No winner
-    return None
+    return False
 
 class TicTacToeBoard:
     """
@@ -394,12 +394,12 @@ while running:
 
     # If the mouse is hovering over an active tickbox, highlight it and set cursor to hand
     if hovering_tickbox and not hovering_tickbox.board.winning_mark and not winner:
-        pygame.mouse.set_system_cursor(pygame.SYSTEM_CURSOR_HAND)
+        pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_HAND)
         hovering_tickbox.highlighted = True
     
     # If the mouse has moved off of a tickbox, unhighlight it and set the cursor to default
     if last_hovering_tickbox and hovering_tickbox is not last_hovering_tickbox:
-        pygame.mouse.set_system_cursor(pygame.SYSTEM_CURSOR_ARROW)
+        pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_ARROW)
         last_hovering_tickbox.highlighted = False
 
     for event in pygame.event.get(): # Gets all the events which have occured until now
@@ -434,9 +434,11 @@ while running:
                         miniboard.reset()
                     
                     # Check if there is a winner
-                    winner = board.check_winner(turn)
-                    if not winner and board.is_full():
+                    is_winner = board.check_winner(turn)
+                    if not is_winner and board.is_full():
                         winner = 'T'
+                    elif is_winner:
+                        winner = turn
 
                     turn = 'X' if turn == 'O' else 'O'
                 
@@ -470,7 +472,7 @@ while running:
             # Draw the winner's mark
             if winner == 'X':
                 DrawShape.X(*INFO_SHAPE_ARGS)
-            # If it's Player O's turn, draw an O
+            # If it's Player O is the winner, draw an O
             else:
                 DrawShape.O(*INFO_SHAPE_ARGS)
 
